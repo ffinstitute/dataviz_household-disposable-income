@@ -1,10 +1,11 @@
 // D3js - Profitability of Industrial Sectors
-var color=d3.scale.category20c();
+var color=d3.scale.category10();
 var height = 400;
 
 //var x = d3.scale.ordinal().rangeBands([0, width]);
 
-var years=[2000,2005,2010,2015];
+//var years=[2000,2005,2010,2015];
+var years=d3.range(2000,2015+1);
 
 function updateGraph() {
 
@@ -31,7 +32,7 @@ function updateGraph() {
     vis.attr("width", width ).attr("height", 400 );
     // x.domain(data.map(function(d,i) { return i; }));
     xScale.domain([2000,2015]);//2000  2005    2010    2015
-    yScale.domain([3, 22]);
+    yScale.domain([-10, 10]);
     
     //y1.domain([0, 0.25]);
 
@@ -95,29 +96,18 @@ function updateGraph() {
         .style("stroke", function(d){
             //console.warn(d);
             return '#cccccc';
-            return color(d.name);
+            return color(d.location);
         })
         .attr("stroke-width", 2)
         .style('opacity', 0.5)
         .attr("fill", "none")
-        /*
-        .on("mouseover", function(d){
-            d3.select(this).style('stroke-width', 4);
-            d3.select(this).style('opacity', 1);
-        })
-        //.on("mousemove", mm1)
-        .on("mouseout", function(d){
-            d3.select(this).style('stroke-width', 2);
-            d3.select(this).style('opacity', 0.5);
-        })
-        */
         ;
           
     group.append("text")
-        .datum(function(d) { return {name: d.name, offset:+d.offset_y, value: d.d[d.d.length - 1]}; })
+        .datum(function(d) { return {name: d.location, value: d.d[d.d.length - 1]}; })
         .attr("transform", function(d) { 
             //console.log(d);
-            return "translate(" + xScale(d.value[0]) + "," + (yScale(d.value[1])+d.offset) + ")";
+            return "translate(" + xScale(d.value[0]) + "," + (yScale(d.value[1])) + ")";
         })
         .attr("x", 5)
         .attr("dy", ".35em")
@@ -162,38 +152,180 @@ function updateGraph() {
 
 }
 
+//horizontal bars, inspired from : 
+// vertical list of countries 
+function updateGraph2() {
+
+    console.log('updateGraph2()');
+    
+    var yr=$('input#year').val();
+    
+    for(var i in data){
+        //var o=data[i];
+        data[i].val=data[i][yr];            
+    }
+    //data=json;
+
+
+    var margin={
+        'top':20
+    }
+    
+    
+  
+  
+    var Scale = d3.scale.linear().domain([-30,30]).range([160,800]);
+    var xAxis = d3.svg.axis().scale(Scale).tickFormat(function(d){
+        //if( d > 1000)return Math.round(d/1000)+"k";
+        return d;
+    })
+    .orient("top");
+    
+    vis2.selectAll('.axis').remove();//clear
+    
+    vis2.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(0,20)")
+    .call(xAxis);
+    
+    vis2.selectAll('.axis line, .axis path').style({ 'stroke': 'Black', 'fill': 'none', 'stroke-width': '1px'});
+    
+    // axis //
+    //var teu1 = vis2.selectAll("rect.stick").data( data.filter(function(d){return d.val>0;}) );
+    
+    // Labels (country name)
+    
+
+    var lineheight=19;
+    var txt = vis2.selectAll("text.label").data( data );
+    txt.enter().append("text")
+        .text(function(d,i){ 
+            //console.info(d.location);
+            return  d.location;
+        })
+        .attr("text-anchor", "end")
+        .attr("x", 0 )
+        .attr("y", function(d,i){ return (i*lineheight) + 14 +margin.top})
+        .attr("fill", "#999")
+        .attr("class", "label");
+    
+    txt.text(function(d,i){
+            
+            return  d.location;
+        })//update
+        .transition(500)
+        .attr("x", 150 )
+        .attr("y", function(d,i){ return (i*lineheight) + 14 +margin.top });
+    
+    txt.exit().remove();
+
+
+    // Sticks //    
+    
+    
+    var teu1 = vis2.selectAll("rect.stick").data( data );
+        teu1.enter().append("rect")
+        .attr("class", "stick" )
+        .attr("fill", color(2) )
+        .attr("x", function(d){
+            return Scale(0);
+        })
+        .attr("y", function(d,i){
+            return i*lineheight +9 +margin.top;
+        })
+        .attr("height" , 8 )
+        .attr("width", 0 );
+
+    teu1.transition(500)
+        .attr("fill", function(d){
+            if(d.val<0){
+                return color(1);
+            } else {
+                return color(2);
+            }
+        })
+        .attr("x", function(d){
+            if(d.val<0){
+                return Scale(0)-(Scale(0)-Scale(d.val));
+            }else{
+                return Scale(0);    
+            }
+        })
+        .attr("y", function(d,i){return i*lineheight +9 +margin.top;} )
+        .attr("width", function(d){ 
+            //console.info(d.location,d.val,Scale(d.val));
+            if(d.val<0){
+                return Scale(0)-Scale(d.val);
+            }else{
+                return Scale(d.val)-Scale(0);    
+            }
+            
+        } )
+      
+    teu1.exit().remove(); 
+    
+}
+
+// Country evolution detail
+// Show one country only, vertical bars
+function updateGraph3() {
+    var loc=$("select#country").val();
+    if(!loc)return;
+    console.info('updateGraph3()',loc);
+    
+    //get data
+    for(var i in data){
+        var o=data[i];
+        if(o.location==loc){
+            console.log(o);
+        }
+    }
+}
+
 var _last=null;
 
 // data part
 var data=[];
 
-
 $(function() {
+    
+    $('input#year').change(function(o){
+        console.log(o);
+        $('label#labelYear').html("Year: "+$('input#year').val());
+        updateGraph2();
+    });
+    
+    $("select#country").empty();
+    $("select#country").change(function(){
+        updateGraph3();
+    });
 
     //refresh();//compute and redraw graph
-    d3.tsv("data.tsv", function(error, json){
+    d3.csv("data.csv", function(error, json){
         
         if (error) {
             return console.error(error);
         }
         
-        //console.log(json);
-        
-        data=[];
+        var countries=[];
         for(var i in json){
             var o=json[i];
-            //console.log(o);
-            var d=[];
-            d.push([2000,+o['2000']]);
-            d.push([2005,+o['2005']]);
-            d.push([2010,+o['2010']]);
-            d.push([2015,+o['2015']]);
-            data.push({'name':o.Sector,'offset_y':o.offset,'d':d});
-        }
-        //console.info(data);
-        updateGraph();
-    });
+            countries.push(o.location);
 
+            var x = document.getElementById("country");
+            var option = document.createElement("option");
+            option.value = o.location;
+            option.text = o.location;
+            x.add(option);
+        }
+        
+        data=json;
+        //console.log(countries.length,countries);
+        //updateGraph();
+        updateGraph2();
+    });
+    
+   
     console.info('d3.version',d3.version);
     
     width=$('div.container').width();
@@ -201,6 +333,18 @@ $(function() {
         .attr("width", width)
         .attr("height", height)
         .attr("class", "vis");
+
+    vis2 = d3.select("div#graph2").append("svg:svg")
+        .attr("width", width)
+        .attr("height", 680)
+        .attr("class", "vis2");
+
+    vis3 = d3.select("div#graph3").append("svg:svg")
+        .attr("width", width)
+        .attr("height", 300)
+        .attr("class", "vis3");
+
+
 
     ttdiv = d3.select("body").append("div").attr("class", "tooltip").style("opacity", 1e-6);
     
@@ -216,5 +360,7 @@ d3.select(window).on('resize', function(){
         // all resizable graph should be updated here
         console.log('resizeEnd');
         updateGraph();
+        updateGraph2();
+        updateGraph3();
     },300);//update all graph
 });
