@@ -15,6 +15,11 @@ svg{
   font: 10px sans-serif;
 }
 
+.txt {
+  font: 10px sans-serif;
+  fill:#999;
+}
+
 .axis path,
 .axis line {
   fill: none;

@@ -21,6 +21,5 @@ function tttop(){
 }
 
 function ttout(){
-    //console.log('ttout');
     ttdiv.transition().duration(200).style("opacity", 1e-6);
 }

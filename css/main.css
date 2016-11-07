@@ -2,11 +2,15 @@
 /* sorry but i want to make sure it fit nicely in the edx courseware */
 .container {
     margin: 0 auto;
-    /*max-width: 750px;*/
+    max-width: 750px;
 }
 
 
 
 svg{
 	background-color:white;
+}
+
+svg.vis3{
+	background-color:#f0f0f0;
 }
