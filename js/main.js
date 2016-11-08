@@ -10,84 +10,84 @@ var WIDTH=400;//container width, updated on resize
 //var years=[2000,2005,2010,2015];
 var years=d3.range(2000,2015+1);
 
-function updateGraph() {
+function updateGraph() {//https://data.oecd.org/hha/household-savings.htm
     
-    return;
+    console.info('updateGraph()');
     
-    //console.info('updateGraph()',vis);
-    
-    width=$('div.container').width();
-    var xScale = d3.scale.linear().range([50, width-150]);
-    var yScale = d3.scale.linear().range([400-50, 0]);//PCT
+    //width=$('div.container').width();
+    var xScale = d3.scale.linear().range([50, WIDTH-20]);
+    var yScale = d3.scale.linear().range([400-50, 10]);//PCT
     
     var xAxis = d3.svg.axis().scale(xScale).orient("bottom")
-        .ticks(5)
+        .tickSize(360,0)
+        .ticks(8)
         .tickFormat(function(d){return d})
         ;
     
-    var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(6);
+    var yAxis = d3.svg.axis().scale(yScale).orient("left")
+        .ticks(6)
+        .tickFormat(function(d){return d+"%"});
 
     var line = d3.svg.line()
         //.interpolate("basis")
         .interpolate("linear")
-        .x(function(d) { return xScale(d[0]); })
-        .y(function(d) { return yScale(d[1]); });
+        .x(function(d) { return xScale(d.year); })
+        .y(function(d) { return yScale(d.val); });
 
-
-    
-    vis.attr("width", width ).attr("height", 400 );
+    vis.attr("width", WIDTH ).attr("height", 400 );
     // x.domain(data.map(function(d,i) { return i; }));
     xScale.domain([2000,2015]);//2000  2005    2010    2015
-    yScale.domain([-10, 10]);
+    yScale.domain([-15, 40]);
     
     //y1.domain([0, 0.25]);
 
 
 
-    // delete prev axis
-    vis.selectAll('.axis').remove();
-
-    // x-axis to svg
-    vis.append("g").attr("class", "x axis")
-        .attr("transform", "translate(0,360)")
-        .style("font-size","16px")
-        .call(xAxis);
     
 
-    vis.append("g")
-        .attr("class", "y axis")
-        .style("font-size","16px")
-        .attr("transform", "translate(30,10)")
-        .call(yAxis)
+    if(!vis.selectAll('g')[0].length){// draw only once //
+        
+        vis.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0,10)")
+            //.style("font-size","16px")
+            .call(xAxis);
+        
+        vis.append("g")
+            .attr("class", "y axis")
+            //.style("font-size","16px")
+            .attr("transform", "translate(30,0)")
+            .call(yAxis)
+            ;
+                
+    } else {
+        vis.select(".x.axis").call(xAxis);// update axis
+        //vis.select(".y.axis").call(yAxis);// update axis
+    }
     
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", -25)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text("%");
-    
+    vis.selectAll('.axis line, .axis path').style({ 'stroke': '#eee', 'fill': 'none', 'stroke-width': '1px'});
+
 
     var vline= vis.selectAll("line.vline").data([0]);
     vline.enter().append("line")
         .attr("class","vline")
-        .attr("stroke","#aaaaaa")
+        .attr("stroke","#999")
         .style("stroke-dasharray", ("3, 3"))
         //.style("opacity",0.5)
         .attr("stroke-width",1)
         .style('shape-rendering','crispEdges');
     
     vline.transition()
-        .attr("x1",function(d){return xScale(d);})
-        .attr("x2",function(d){return xScale(d);})
-        .attr("y1",0)
-        .attr("y2",400-40);
+        .attr("x1",35)
+        .attr("x2",WIDTH)
+        .attr("y1",function(d){return yScale(d);})
+        .attr("y2",function(d){return yScale(d);});
 
    
     
-
-
     //console.log(data.length)
+    
+    
     vis.selectAll(".group").remove();
 
     var group = vis.selectAll(".group")
@@ -97,7 +97,15 @@ function updateGraph() {
             
     
     group.append("path")
-        .attr("d", function(d) { return line(d.d); })
+        .attr("d", function(d) { 
+            //console.log(d);
+            dat=[];
+            for(var i=2000;i<=2015;i++){
+                if(d[i])dat.push({'year':i,'val':d[i]});
+            }
+            
+            return line(dat);
+        })
         .attr("class", "line")
         .style("cursor", "pointer")
         .style("stroke", function(d){
@@ -109,7 +117,8 @@ function updateGraph() {
         .style('opacity', 0.5)
         .attr("fill", "none")
         ;
-          
+        
+        /*
     group.append("text")
         .datum(function(d) { return {name: d.location, value: d.d[d.d.length - 1]}; })
         .attr("transform", function(d) { 
@@ -124,8 +133,9 @@ function updateGraph() {
         .style("cursor", "pointer")
         .style('opacity', 0.5)
         .text(function(d) { return d.name; });
+*/
 
-
+        
     group
     .on("mouseover",function(d){
         
@@ -134,19 +144,13 @@ function updateGraph() {
             d3.select(_last).select('text').style('opacity', 0.5);
         }
         
-        d3.select(this).select('path').attr("stroke-width", 4).style('opacity', 1).style('stroke','#cc0000');
+        d3.select(this).select('path').attr("stroke-width", 3).style('opacity', 1).style('stroke','#cc0000');
         d3.select(this).select('text').style('opacity', 1).style('font-weight','bold');
-        var htm="Sector: <b>"+d.name+"</b><hr />";
-        htm+="<table>";
-        htm+="<thead><th width=60>Year</th><th>ROCE</th>";
-        for(var i in d.d){
-            var o=d.d[i];
-            //console.log(o);
-            htm+="<tr><td>"+o[0];
-            htm+="<td style='text-align:right'>"+o[1]+"%</td>";    
-        }
-        htm+="</table>";
+        
+        var htm="Country: <b>"+d.location+"</b>";
+        
         ttover(htm);
+        updateDots(d);
         _last=this;
     }).on("mousemove",function(){
         ttmove();
@@ -156,46 +160,69 @@ function updateGraph() {
         //d3.select(this).select('text').style('opacity', 0.5);
         ttout();
     });
+    
+    
+    function updateDots(d){
+        
+        
 
+        var data=[];
+        for(var i=2000;i<2015;i++){
+            if(d[i])data.push({'year':i,'val':+d[i]});
+        }
+        
+        //console.info('updateDots()',data);
+
+        vis.selectAll(".grop").remove();
+
+        var group = vis.selectAll(".grop")
+            .data(data)
+            .enter().append("g")
+            .attr("class", "grop")
+            .attr('transform',function(d,i){
+                return "translate(" + xScale(d.year) + "," + yScale(d.val) + ")"; 
+            })
+            ;
+
+        group.append("circle")
+            .attr('r',3)
+            .attr('fill',"#cc0000")
+
+        group.append("text")
+            
+            .attr("text-anchor", "middle")
+            .style("font-size", "11px")
+            //.style("font-weight", "bold")
+            .style("cursor", "pointer")
+            //.style('opacity', 0.5)
+            .text(function(d) { return d.val; })
+            .attr("transform", "translate(0,-8)")
+            ;
+
+    }
 }
 
 //horizontal bars, inspired from : 
 // vertical list of countries 
 function updateGraph2() {
-
-    
     
     var yr=$('input#year').val();
-    
     $('label#labelYear').html("Year: "+yr);
-    
+    var margin={'top':20}
     var min=0
     var max=0;
+    
     for(var i in data){
         //var o=data[i];
         data[i].val=data[i][yr];
         if(!data[i].val)continue;
-        //console.log(data[i].val);
         if(data[i].val<min)min=+data[i].val;
         if(data[i].val>max)max=+data[i].val;
     }
-    //data=json;
-
-    // Sort data //
-    data=data.sort(function(a,b){
-        //return a.val-b.val;
-        return b.val-a.val;
-    });
-
-    var margin={
-        'top':20
-    }
     
-    
-    //var minMax=d3.extent(data,function(d){return d.val;});//nope
-    console.log('updateGraph2()',[min,max]);
-    //console.log(minMax);
+    data=data.sort(function(a,b){return b.val-a.val;});// Sort data
 
+    //console.log('updateGraph2()',[min,max]);
     var Scale = d3.scale.linear().domain([min,max]).range([160,WIDTH-20]);
     var xAxis = d3.svg.axis().scale(Scale).tickFormat(function(d){
         //if( d > 1000)return Math.round(d/1000)+"k";
@@ -358,15 +385,15 @@ function updateGraph3() {
     var yMax=d3.max(datum,function(d){return d.pct});
     var yMin=d3.min(datum,function(d){return d.pct});
     
-    console.info(loc+' min:'+yMin+"%",'max:'+yMax+"%");
+    //console.info(loc+' min:'+yMin+"%",'max:'+yMax+"%");
     
     var yScale = d3.scale.linear().domain([yMin,yMax]).range([0,50]);
     
     
     
-    // draw only once //
+    
 
-    if(!vis3.selectAll('g')[0].length){
+    if(!vis3.selectAll('g')[0].length){// draw only once //
         //vis3.selectAll('.axis').remove();//clear
         vis3.append("g")
         .attr("class", "x axis")
@@ -376,10 +403,10 @@ function updateGraph3() {
         vis3.selectAll('.axis line, .axis path').style({ 'stroke': '#999', 'fill': 'none', 'stroke-width': '1px'});
     }else{
         //console.warn("Update .x.axis",WIDTH);
-        // update axis
-        vis3.select(".x.axis").call(xAxis);
-    }
+        
+        vis3.select(".x.axis").call(xAxis);// update axis
     
+    }
     
     
     
@@ -472,8 +499,6 @@ function updateGraph3() {
             return d.pct+"%"
         })
         ;
-
-
 }
 
 var _last=null;
@@ -516,7 +541,7 @@ $(function() {
         
         data=json;
         //console.log(countries.length,countries);
-        //updateGraph();
+        updateGraph();
         updateGraph2();
         updateGraph3();
     });
