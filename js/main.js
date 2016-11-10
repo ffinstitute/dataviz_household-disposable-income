@@ -207,7 +207,7 @@ function updateGraph() {//https://data.oecd.org/hha/household-savings.htm
 function updateGraph2() {
     
     var yr=$('input#year').val();
-    $('label#labelYear').html("Year: "+yr);
+    $('label#labelYear').html("Country ranking, year: "+yr);
     var margin={'top':20}
     var min=0
     var max=0;
