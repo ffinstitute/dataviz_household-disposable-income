@@ -356,7 +356,7 @@ function updateGraph2() {
 // Country evolution detail
 // Show one country only, vertical bars
 function updateGraph3() {
-    
+    return;//disabled
     var loc=$("select#country").val();
     if(!loc)return;
     //console.info('updateGraph3()',loc);
@@ -536,7 +536,7 @@ $(function() {
             var option = document.createElement("option");
             option.value = o.location;
             option.text = o.location;
-            x.add(option);
+            //x.add(option);
         }
         
         data=json;
